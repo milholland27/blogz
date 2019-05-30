@@ -3,14 +3,20 @@
 
     <h3> {{ welcome }} </h3>
     <h1> {{ title }} </h1>
-    <h3> 
-        <form id= "individual_user" action= "/UserPage">
-            Author:
-            <input form= "individual_user" type= "submit" 
-                class= "link_button" name= "user_link" 
-                value= "{{ author }}"/>
-        </form>
+            
+    {% for blog in blogs %}
+    <h2>
+        <a href="/singleblog?blog_title={{ blog.title }}"> {{ blog.title }}
+        </a>
+    </h2>
+    <p>
+        {{ blog.body}}
+    </p>        
+    <h3>
+        <a href="/individual?user_link={{ blog.owner.id }}"> 
+            {{blog.owner }}</a>
     </h3>
-    <p> {{ body }} </p>
+
+    {% endfor %}
 
 {% endblock %}

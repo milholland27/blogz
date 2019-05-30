@@ -1,7 +1,6 @@
 from flask import Flask, session, request, redirect, render_template
 from flask_sqlalchemy import SQLAlchemy
 
-
 app = Flask(__name__)
 app.config['DEBUG'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://blogz:blogz@localhost:8889/blogz'
@@ -10,9 +9,10 @@ db = SQLAlchemy(app)
 app.secret_key = '8675309'
 
 class Blog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.
+    Integer, primary_key=True)
     title = db.Column(db.String(120))
-    post = db.Column(db.String(1000))
+    body = db.Column(db.String(1000))
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     def __init__(self, title, body, owner):
@@ -34,15 +34,6 @@ class User(db.Model):
     def __repr__(self):
         return str(self.username)    
 
-# # Required so that user is allowed to visit specific routes prior to logging in.
-# # Redirects to login page once encountering a page without permission.
-@app.before_request
-def require_login():
-    # allowed_routes = ['blog', 'index'] #login',# 'blog', 'index', 'individualpost',
-    # # 'newpost', 'singleUser', 'signup'#
-    if 'user' not in session and request.endpoint == 'newpost':
-        return redirect('/login')
-
 # Index route, redirects to home.
 @app.route('/')
 def index():
@@ -60,10 +51,12 @@ def home():
 # Login route - validation and verification of user information in database.
 @app.route('/add', methods=['POST','GET'])
 def AddBlog():
+    if 'user' not in session:
+        return redirect('/login')
+
     error = {"title_blank": "", "body_blank": ""}
     new_body = ""
     new_title = ""
-
     welcome = "Logged in as: " + session['user']
     existing_user = User.query.filter_by(username=session['user']).first()
     
@@ -82,26 +75,32 @@ def AddBlog():
             db.session.add(new_blog)
             db.session.commit()
             #author = User.query.filter_by(id= new_blog.owner_id).first()
-            return redirect("/individual?blog_title="+new_title)
+            return redirect("/singleblog?blog_title="+new_title)
 
     return render_template('add.html', title= "Add a blog post", 
         add_body= new_body, add_title= new_title,
         title_blank= error["title_blank"], body_blank= error["body_blank"],
         welcome= welcome)
 
-@app.route("/individual")
-def OneBlog():
-    welcome = "Not logged in"
-    if 'user' in session:
-        welcome = "Logged in as: " + session['user']
+#@app.route("/individual")
+#def Individual():
+ #   welcome = "Not logged in"
+  #  if 'user' in session:
+   #     welcome = "Logged in as: " + session['user']
+#
+ #   title = request.args.get('blog_title')
+  #  if title:
+   #     existing_blog = Blog.query.filter_by(title= title).first()
+    #    author = User.query.filter_by(id= existing_blog.owner_id).first()
+     #   return render_template("individual.html", 
+      #      title= existing_blog.title, body= existing_blog.body,
+       #     author= author, welcome= welcome)
 
-    title = request.args.get('blog_title')
-    if title:
-        existing_blog = Blog.query.filter_by(title= title).first()
-        author = User.query.filter_by(id= existing_blog.owner_id).first()
-        return render_template("individual.html", 
-            title= existing_blog.title, body= existing_blog.body,
-            author= author.username, welcome= welcome)
+@app.route("/singleblog")
+def SingleBlog():
+    blog_title = request.args.get('blog_title')
+    blog = Blog.query.filter_by(title= blog_title).first()
+    return render_template("singleblog.html", title= "Single Blog Post", blog= blog)
 
 
 @app.route("/individual")
@@ -112,19 +111,22 @@ def UserPosts():
 
     user = request.args.get('user_link')
     if user:
-        existing_user = User.query.filter_by(username= user).first()
-        user_posts = existing_user.blogs
+        user=int(user)
+        blogs = Blog.query.filter_by(owner_id= user).all()
         return render_template("individual.html", welcome= welcome,
-            title= user+"'s posts", blogs= user_posts)
+            title= "User Posts", blogs= blogs)
 
     user_list = User.query.all()
-    return render_template("AllUsers.html", title= "All Users",
+    return render_template("individual.html", title= "User Page",
         welcome= welcome, user_list= user_list)
 
 @app.route("/register", methods=['POST', 'GET'])
 def register():
     error = {"name_error": "", "pass_error": "", "verify_error": ""}
     if request.method == 'POST':
+        if 'user' in session:
+            del session['user']
+
         username = request.form['username']
         password = request.form['password']
         verify = request.form['verify']
@@ -158,8 +160,8 @@ def register():
 def login():
     error = {"name_error": "", "pass_error": ""}
     username = ""
-    #if 'user' in session:
-        #del session['user']
+    if 'user' in session:
+        del session['user']
         
     if request.method == 'POST':
         username = request.form['username']
@@ -185,17 +187,11 @@ def login():
 
 @app.route("/logout", methods= ['POST', 'GET'])
 def logout():
-        current_user = session['user']
-        if request.method == 'POST':
-            yes = request.form['logout']
-        print(yes)
-        session['user'] = ""
-        return redirect("/home")
-        
         if 'user' in session:
             del session['user']
-        return redirect('/home')
-        return render_template("logout.html", title= "Logout", name= current_user)
+
+        return redirect("/home")
+        
 
 
 if __name__ == '__main__':

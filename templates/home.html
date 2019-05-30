@@ -7,42 +7,23 @@
     {% if blogs|length == 0 %}
         <p> No blogs yet </p>
     {% else %}
-        <table>
-            <thead>
-                <td> 
-                    <p><b>Post title</b></p>
-                </td>
-                <td>
-                    <p><b>Author</b></p>
-                </td>
-                <td> 
-                    <p><b>Post Body</b></p>
-                </td>
-            </thead>
+        
+                
         {% for blog in blogs %}
-                <tr>
-                    <td>
-                        <form id= "individual_blog" action="/individual">
-                            <input form= "individual_blog" type= "submit" 
-                                class= "link_button" name= "blog_title" 
-                                value= "{{ blog.title }}"/>
-                        </form>
-                    </td>
-                    <td>
-                        <form id= "individual_user" action= "/UserPage">
-                            <input form= "individual_user" type= "submit" 
-                                class= "link_button" name= "user_link" 
-                                value= "{{ blog.owner }}"/>
-                        </form>
-                    </td>
-                    
-                    <td> 
-                        {{ blog.body }}
-                    </td>
-                </tr>
+        <h2>
+            <a href="/singleblog?blog_title={{ blog.title }}"> {{ blog.title}}
+            </a>
+        </h2>
+        <p>
+            {{ blog.body}}
+        </p>        
+        <h3>
+            <a href="/individual?user_link={{ blog.owner.id }}"> 
+                {{blog.owner }}</a>
+        </h3>
+
         {% endfor %}
 
-        </table>
     {% endif %}
 
 {% endblock %}
